@@ -1,3 +1,5 @@
-Hi,
+#Description
 
-This is an Academic Project with the purpose to create a custom shell with basic operations. So far, only ADD, SUBTRACT, MUL, DIVIDE operations work.
+A small Academic Project with the purpose to use TCP Sockets to create a communication link between multiple PCs.
+
+
