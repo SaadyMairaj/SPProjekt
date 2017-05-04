@@ -27,6 +27,7 @@ void *ReaderFunction(void *ptr){
         else if (reading == 0)
         {
             write(STDOUT_FILENO, "In Reading == 0", sizeof("In Reading == 0"));
+            break
         }
         write(STDOUT_FILENO, buffer, reading);
     }
