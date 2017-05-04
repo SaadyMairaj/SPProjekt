@@ -38,11 +38,12 @@ struct Table processList[PROCESS_LIST_SIZE];
 void AddIntegers(char arr[], int msgsock){
     int Number = 0;
     char msg[OUTPUT];
-    char *token = strtok(arr, " ");
+    char *savePtr;
+    char *token = strtok_r(arr, " ", &savePtr);
     while(token != NULL){
         int value = atoi(token);
         Number += value;
-        token = strtok(NULL, " ");
+        token = strtok_r(NULL, " ", &savePtr);
     }
     // sleep(5);
     int toWrite = sprintf(msg, "The Answer is : %d", Number);
@@ -52,14 +53,15 @@ void AddIntegers(char arr[], int msgsock){
 void SubtractIntegers(char arr[], int msgsock){
     int Number = 0;
     char msg[OUTPUT];
-    char *token = strtok(arr, " ");
-    token = strtok(NULL, " ");
+    char *savePtr;
+    char *token = strtok_r(arr, " ", &savePtr);
+    token = strtok_r(NULL, " ", &savePtr);
     Number = atoi(token);
-    token = strtok(NULL, " ");
+    token = strtok_r(NULL, " ", &savePtr);
     while(token != NULL){
 
         Number = Number - atoi(token);
-        token = strtok(NULL, " ");
+        token = strtok_r(NULL, " ", &savePtr);
     }
     int toWrite = sprintf(msg, "The Answer is : %d", Number);
     write(msgsock, msg, toWrite);
@@ -69,14 +71,15 @@ void SubtractIntegers(char arr[], int msgsock){
 void MultiplyIntegers(char arr[], int msgsock){
     int Number = 0;
     char msg[OUTPUT];
-    char *token = strtok(arr, " ");
-    token = strtok(NULL, " ");
+    char *savePtr;
+    char *token = strtok_r(arr, " ", &savePtr);
+    token = strtok_r(NULL, " ", &savePtr);
     Number = 1;
     while(token != NULL){
 
         int value = atoi(token);
         Number *= value;
-        token = strtok(NULL, " ");
+        token = strtok_r(NULL, " ", &savePtr);
     }
     int toWrite = sprintf(msg, "The Answer is : %d", Number);
     write(msgsock, msg, toWrite);
@@ -86,10 +89,11 @@ void DivideIntegers(char arr[], int msgsock){
     int flag = 0;
     int Number = 0;
     char msg[OUTPUT];
-    char *token = strtok(arr, " ");
-    token = strtok(NULL, " ");
+    char *savePtr;
+    char *token = strtok_r(arr, " ", &savePtr);
+    token = strtok_r(NULL, " ", &savePtr);
     Number = atoi(token);
-    token = strtok(NULL, " ");
+    token = strtok_r(NULL, " ", &savePtr);
     while(token != NULL){
         int value = atoi(token);
         if (value == 0)
@@ -100,7 +104,7 @@ void DivideIntegers(char arr[], int msgsock){
         }
 
         Number /= value;
-        token = strtok(NULL, " ");
+        token = strtok_r(NULL, " ", &savePtr);
     }
     if(flag == 1){
 
@@ -114,14 +118,15 @@ void DivideIntegers(char arr[], int msgsock){
 
 void RunProgram(char arr[], int msgsock){
     char *arga[BUFF_SIZE];
-    char *token = strtok(arr, " ");
-    token = strtok(NULL, " ");
+    char *savePtr;
+    char *token = strtok_r(arr, " ", &savePtr);
+    token = strtok_r(NULL, " ", &savePtr);
     int index = 0;
 
     while(token != NULL){
         arga[index] = token;
         index++;
-        token = strtok(NULL, " ");
+        token = strtok_r(NULL, " ", &savePtr);
     }
 
     arga[index] = 0;
@@ -171,11 +176,11 @@ void RunProgram(char arr[], int msgsock){
 }
 
 void KillProgram(char arr[], int msgsock){
-
-    char *token = strtok(arr, " ");
-    token = strtok(NULL, " ");
+    char *savePtr;
+    char *token = strtok_r(arr, " ", &savePtr);
+    token = strtok_r(NULL, " ", &savePtr);
     char *program;
-    if (program = strtok(NULL, " "))
+    if (program = strtok_r(NULL, " ", &savePtr))
     {
         if(strcasecmp(program, "ALL")==0){
             char *ptr;
@@ -255,8 +260,9 @@ void KillProgram(char arr[], int msgsock){
 }
 
 void ListProgram(char arr[], int msgsock){
-    char *token = strtok(arr, " ");
-    if(token = strtok(NULL, " ")){
+    char *savePtr;
+    char *token = strtok_r(arr, " ", &savePtr);
+    if(token = strtok_r(NULL, " ", &savePtr)){
         if(strcasecmp(token, "ALL")==0){
             char toPrint[MAX_PRINT];
             strcpy(toPrint, "Name\t\t\tProcess Id\t\t\tStart Time\t\t\tEnd Time\n");
@@ -385,7 +391,7 @@ int main(int argc, char const *argv[])
 
     do{
         msgsock = accept(sock, 0, 0);
-        // int pid = fork();
+
         if(msgsock == -1){
             perror("Accept");
         }
@@ -409,7 +415,8 @@ int main(int argc, char const *argv[])
 
                 strcpy(testBuff, buffer);
 
-                token = strtok(testBuff, " ");
+                char *savePtr;
+                token = strtok_r(testBuff, " ", &savePtr);
 
                 if(strcasecmp(token, "add")==0){
                     AddIntegers(buffer, msgsock);
