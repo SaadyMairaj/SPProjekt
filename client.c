@@ -11,9 +11,33 @@
 #include <netdb.h>
 #include <string.h>
 
+// Threads Includes
+#include <pthread.h>
+
+void *ReaderFunction(void *ptr){
+    char buffer[500];
+    int sock = *((int *) ptr);
+    // printf("In Reader: %d\n", sock);
+    // printf("In Yo\n");
+    while(1){
+        int reading = read(sock, buffer, sizeof(buffer));
+        if(reading < 0){
+            perror("Socket Read");
+        }
+        else if (reading == 0)
+        {
+            write(STDOUT_FILENO, "In Reading == 0", sizeof("In Reading == 0"));
+        }
+        write(STDOUT_FILENO, buffer, reading);
+    }
+
+
+}
+
 
 int main(int argc, char const *argv[])
 {
+    pthread_t reader;
     char buffer[500];
     int answer = 1;
     char output[500];
@@ -47,8 +71,15 @@ int main(int argc, char const *argv[])
         perror("Connecting Stream Socket");
         exit(1);
     }
+    printf("%d\n", sock);
 
     write(STDOUT_FILENO, "Welcome to the Client Console!!\n", sizeof("Welcome to the Client Console!!\n"));
+
+
+    // int *ptr = &sock;
+    // *ptr = sock;
+
+    pthread_create(&reader, NULL, ReaderFunction, &sock);
 
     while(line > 0){
         write(STDOUT_FILENO, "\n>> ", sizeof("\n>> "));
@@ -70,9 +101,15 @@ int main(int argc, char const *argv[])
 
         write(sock, buffer, line);
 
-        answer = read(sock, output, sizeof(output));
-        write(STDOUT_FILENO, output, answer);
+
+
+        // answer = read(sock, output, sizeof(output));
+        // write(STDOUT_FILENO, output, answer);
+
     }
+    pthread_join(reader, NULL);
+
     close(sock);
+
     return 0;
 }

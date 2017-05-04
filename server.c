@@ -44,6 +44,7 @@ void AddIntegers(char arr[], int msgsock){
         Number += value;
         token = strtok(NULL, " ");
     }
+    sleep(5);
     int toWrite = sprintf(msg, "The Answer is : %d \n", Number);
     write(msgsock, msg, toWrite);
 }
