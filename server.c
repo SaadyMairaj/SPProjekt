@@ -44,8 +44,8 @@ void AddIntegers(char arr[], int msgsock){
         Number += value;
         token = strtok(NULL, " ");
     }
-    sleep(5);
-    int toWrite = sprintf(msg, "The Answer is : %d \n", Number);
+    // sleep(5);
+    int toWrite = sprintf(msg, "The Answer is : %d", Number);
     write(msgsock, msg, toWrite);
 }
 
@@ -61,7 +61,7 @@ void SubtractIntegers(char arr[], int msgsock){
         Number = Number - atoi(token);
         token = strtok(NULL, " ");
     }
-    int toWrite = sprintf(msg, "The Answer is : %d \n", Number);
+    int toWrite = sprintf(msg, "The Answer is : %d", Number);
     write(msgsock, msg, toWrite);
 
 }
@@ -78,7 +78,7 @@ void MultiplyIntegers(char arr[], int msgsock){
         Number *= value;
         token = strtok(NULL, " ");
     }
-    int toWrite = sprintf(msg, "The Answer is : %d \n", Number);
+    int toWrite = sprintf(msg, "The Answer is : %d", Number);
     write(msgsock, msg, toWrite);
 }
 
@@ -106,7 +106,7 @@ void DivideIntegers(char arr[], int msgsock){
 
     }
     else{
-        int toWrite = sprintf(msg, "The Answer is : %d \n", Number);
+        int toWrite = sprintf(msg, "The Answer is : %d", Number);
         write(msgsock, msg, toWrite);
     }
 
@@ -286,7 +286,7 @@ void ListProgram(char arr[], int msgsock){
 
             write(msgsock, toPrint, strlen(toPrint));
         }
-        write(msgsock, "Error", sizeof("Error"));
+        // write(msgsock, "Error", sizeof("Error"));
     }
     else{
         char toPrint[MAX_PRINT];
@@ -328,6 +328,7 @@ void signalHandlerFailExec(int signo){
         tableIndex--;
     }
 }
+
 
 int main(int argc, char const *argv[])
 {
@@ -384,17 +385,19 @@ int main(int argc, char const *argv[])
 
     do{
         msgsock = accept(sock, 0, 0);
+        // int pid = fork();
         if(msgsock == -1){
             perror("Accept");
         }
         else{
-
+            line = 2;
             write(STDOUT_FILENO, "\nThe Server Has Accepted a Connection Successfully...\nYou may send arguments via the child terminal... Cheers\n", sizeof("\nThe Server Has Accepted a Connection Successfully...\nYou may send arguments via the child terminal... Cheers\n"));
 
             while(line > 1){
                 Number = 0;
                 line = read(msgsock, buffer, sizeof(buffer));
-                if(line <= 2){
+
+                if(line == 1){
                     line = 2;
                     continue;
                 }
@@ -456,6 +459,7 @@ int main(int argc, char const *argv[])
                 }
             }
         }
+        write(STDOUT_FILENO, "Client Closed", sizeof("Client Closed"));
         close(msgsock);
     } while(TRUE);
 

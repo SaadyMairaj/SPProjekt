@@ -27,9 +27,10 @@ void *ReaderFunction(void *ptr){
         else if (reading == 0)
         {
             write(STDOUT_FILENO, "In Reading == 0", sizeof("In Reading == 0"));
-            break
+            break;
         }
         write(STDOUT_FILENO, buffer, reading);
+        write(STDOUT_FILENO, "\n>> ", sizeof("\n>> "));
     }
 
 
@@ -72,7 +73,7 @@ int main(int argc, char const *argv[])
         perror("Connecting Stream Socket");
         exit(1);
     }
-    printf("%d\n", sock);
+    // printf("%d\n", sock);
 
     write(STDOUT_FILENO, "Welcome to the Client Console!!\n", sizeof("Welcome to the Client Console!!\n"));
 
@@ -90,14 +91,19 @@ int main(int argc, char const *argv[])
         }
 
         char testBuff[1024];
-
         strcpy(testBuff, buffer);
+        testBuff[line-1] = 0;
 
-        char *token = strtok(testBuff, " ");
+        char *space = strchr( testBuff, ' ' );
+        if (space){
+            // char *token = strtok(testBuff, " ");
+        }
 
-        if(strcasecmp(token, "exit")==0){
-            write(sock, buffer, line);
-            break;
+        else{
+            char *word  = testBuff;
+            if(strcasecmp(word, "exit")==0){
+                exit(-1);
+            }
         }
 
         write(sock, buffer, line);
