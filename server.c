@@ -116,6 +116,18 @@ void DivideIntegers(char arr[], int msgsock){
 
 }
 
+void Disconnect(int msgsock){
+    for (int i = 0; i < tableIndex; i++)
+    {
+        printf("%d\n", processList[i].pid);
+        kill(processList[i].pid, SIGTERM);
+    }
+
+    // while(tableIndex >= 1){
+    //     kill(processList[tableIndex].pid, SIGTERM);
+    // }
+}
+
 void RunProgram(char arr[], int msgsock){
     char *arga[BUFF_SIZE];
     char *savePtr;
@@ -335,35 +347,18 @@ void signalHandlerFailExec(int signo){
     }
 }
 
-
-int main(int argc, char const *argv[])
-{
-
-    char buffer[BUFF_SIZE];
-    char testBuff[BUFF_SIZE];
-    char *token;
-    int line = 2;
-    int Number = 0;
-    char sockInfo[BUFF_SIZE];
-
-    // Socket Code..
-    int sock, length;
+int SocketCreation(){
+     // Socket Code..
+    int sock = -1, length;
     struct sockaddr_in server;
-    int msgsock;
+    char sockInfo[500];
 
-     if(signal(SIGCHLD, signalHandlerExec)==SIG_ERR){
-                write(STDOUT_FILENO, "Error in Signal Handler\n", sizeof("Error in Signal Handler\n"));
-    }
-
-    if(signal(SIGUSR2, signalHandlerFailExec)==SIG_ERR){
-        write(STDOUT_FILENO, "Error in Signal Handler\n", sizeof("Error in Signal Handler\n"));
-    }
 
     // Create a socket
     sock = socket(AF_INET, SOCK_STREAM, 0);
     if(sock < 0){
         perror("Opening Sock Stream");
-        exit(0);
+        return -1;
     }
 
     // Name socket using wildcards
@@ -373,102 +368,159 @@ int main(int argc, char const *argv[])
 
     if(bind(sock, (struct sockaddr *)&server, sizeof(server))){
         perror("Binding Stream Socket");
-        exit(0);
+        // exit(0);
+        return -1;
     }
 
     // Find out assigned port and print it out
     length = sizeof(server);
     if(getsockname(sock, (struct sockaddr *)&server, (socklen_t *)&length )){
         perror("Getting Sock Name");
-        exit(0);
+        return -1;
     }
 
     int sizeofSock = sprintf(sockInfo, "Server is now Listening for Connections on PORT : %d\n", ntohs(server.sin_port));
 
-    // Start listening for connections
-    listen(sock, 5);
     write(STDOUT_FILENO, sockInfo, sizeofSock);
 
-    do{
-        msgsock = accept(sock, 0, 0);
+    // Start listening for connections
+    listen(sock, 5);
 
-        if(msgsock == -1){
-            perror("Accept");
+    return sock;
+}
+
+
+int main(int argc, char const *argv[])
+{
+    int clientLength;
+    int msgsock;
+    struct sockaddr_in client;
+
+    char buffer[BUFF_SIZE];
+    char testBuff[BUFF_SIZE];
+    char *token;
+    int line = 2;
+    int Number = 0;
+    char sockInfo[BUFF_SIZE];
+
+    int sock = SocketCreation();
+    if(sock == -1){
+        exit(0);
+    }
+    else{
+        if(signal(SIGCHLD, signalHandlerExec)==SIG_ERR){
+            write(STDOUT_FILENO, "Error in Signal Handler\n", sizeof("Error in Signal Handler\n"));
         }
-        else{
-            line = 2;
-            write(STDOUT_FILENO, "\nThe Server Has Accepted a Connection Successfully...\nYou may send arguments via the child terminal... Cheers\n", sizeof("\nThe Server Has Accepted a Connection Successfully...\nYou may send arguments via the child terminal... Cheers\n"));
 
-            while(line > 1){
-                Number = 0;
-                line = read(msgsock, buffer, sizeof(buffer));
+        if(signal(SIGUSR2, signalHandlerFailExec)==SIG_ERR){
+            write(STDOUT_FILENO, "Error in Signal Handler\n", sizeof("Error in Signal Handler\n"));
+        }
 
-                if(line == 1){
-                    line = 2;
-                    continue;
+
+
+
+        do{
+            clientLength = sizeof(client);
+            msgsock = accept(sock, (struct sockaddr *)&client, (socklen_t *)&clientLength);
+
+            if(msgsock == -1){
+                perror("Accept");
+            }
+            else{
+                line = 2;
+                write(STDOUT_FILENO, "\nThe Server Has Accepted a Connection Successfully...\nYou may send arguments via the child terminal... Cheers\n", sizeof("\nThe Server Has Accepted a Connection Successfully...\nYou may send arguments via the child terminal... Cheers\n"));
+
+            int pid = fork();
+            if(pid > 0){ // Main Server
+                // TODO Nothing here
+            }
+
+            else if (pid == 0){ // Worker Process
+                // TODO Everything here
+                int newSock = msgsock;
+                while(line > 1){
+                    Number = 0;
+                    line = read(msgsock, buffer, sizeof(buffer));
+
+                    if(line == 1){
+                        line = 2;
+                        continue;
+                    }
+
+                    char *newline = strchr( buffer, '\n' );
+                    if (newline){
+                        *newline = 0;
+                    }
+
+                    strcpy(testBuff, buffer);
+
+                    char *savePtr;
+                    token = strtok_r(testBuff, " ", &savePtr);
+
+                    if(strcasecmp(token, "add")==0){
+                        AddIntegers(buffer, msgsock);
+                    }
+
+                    else if(strcasecmp(token, "sub")==0){
+                        SubtractIntegers(buffer, msgsock);
+                    }
+
+                    else if(strcasecmp(token, "mul")==0){
+                        MultiplyIntegers(buffer, msgsock);
+                    }
+
+                    else if(strcasecmp(token, "div")==0){
+                        DivideIntegers(buffer, msgsock);
+                    }
+
+                    else if(strcasecmp(token, "RUN")==0){
+                        RunProgram(buffer, msgsock);
+                    }
+
+                    else if(strcasecmp(token, "LIST")==0){
+                        ListProgram(buffer, msgsock);
+                    }
+
+                    else if(strcasecmp(token, "kill")==0){
+                        KillProgram(buffer, msgsock);
+                    }
+
+
+
+                    else if(strcasecmp(token, "exit")==0 || strcasecmp(token, "disconnect")==0){
+                        // int exitKill = kill(getpid(), SIGTERM);
+                        // if(exitKill < 0){
+                        //     write(msgsock, "Could Not Exit! :(", sizeof("Could Not Exit! :("));
+                        //     continue;
+                        // }
+                        Disconnect(newSock);
+                        write(newSock, "Bye!\n\n", sizeof("Bye!\n\n"));
+                        // exit(0);
+                        close(newSock);
+                        break;
+                    }
+
+                    else if(strcasecmp(token, "HELP")==0){
+                        write(newSock, "\nThe shell has the following basic commands:\n\tADD: ADD <params[]>:Can pass multiple parameters after the keyword ADD 4 5\n\tSUB: SUB <params>: Can pass multiple parameters after the keyword SUB e.g SUB 4 5 6\n\tMUL: MUL <params> : Can pass multiple parameters after the keyword MUL e.g MUL 4 5 6\n\tDIV: DIV <params>: Can pass multiple parameters after the keyword DIV e.g DIV 4 5 6\n\tRUN : RUN <filename>: Creates a new Process of given filename\n\tHELP: Shows the help", sizeof("\nThe shell has the following basic commands:\n\tADD: ADD <params[]>:Can pass multiple parameters after the keyword ADD 4 5\n\tSUB: SUB <params>: Can pass multiple parameters after the keyword SUB e.g SUB 4 5 6\n\tMUL: MUL <params> : Can pass multiple parameters after the keyword MUL e.g MUL 4 5 6\n\tDIV: DIV <params>: Can pass multiple parameters after the keyword DIV e.g DIV 4 5 6\n\tRUN : RUN <filename>: Creates a new Process of given filename\n\tHELP: Shows the help"));
+                    }
+
+                    else{
+                        write(newSock, ":Command Not Recognized\n", sizeof(":Command Not Recognized\n"));
+                    }
                 }
+                write(STDOUT_FILENO, "Client Closed\n", sizeof("Client Closed\n")); // Not Working
+                close(newSock);
 
-                char *newline = strchr( buffer, '\n' );
-                if (newline){
-                    *newline = 0;
-                }
+            }
 
-                strcpy(testBuff, buffer);
-
-                char *savePtr;
-                token = strtok_r(testBuff, " ", &savePtr);
-
-                if(strcasecmp(token, "add")==0){
-                    AddIntegers(buffer, msgsock);
-                }
-
-                else if(strcasecmp(token, "sub")==0){
-                    SubtractIntegers(buffer, msgsock);
-                }
-
-                else if(strcasecmp(token, "mul")==0){
-                    MultiplyIntegers(buffer, msgsock);
-                }
-
-                else if(strcasecmp(token, "div")==0){
-                    DivideIntegers(buffer, msgsock);
-                }
-
-                else if(strcasecmp(token, "RUN")==0){
-                    RunProgram(buffer, msgsock);
-                }
-
-                else if(strcasecmp(token, "LIST")==0){
-                    ListProgram(buffer, msgsock);
-                }
-
-                else if(strcasecmp(token, "kill")==0){
-                    KillProgram(buffer, msgsock);
-                }
-
-                else if(strcasecmp(token, "exit")==0){
-                    // int exitKill = kill(getpid(), SIGTERM);
-                    // if(exitKill < 0){
-                    //     write(msgsock, "Could Not Exit! :(", sizeof("Could Not Exit! :("));
-                    //     continue;
-                    // }
-
-                    write(STDOUT_FILENO, "Thank You For Using This Software!\n\n", sizeof("Thank You For Using This Software!\n\n"));
-                    exit(0);
-                }
-
-                else if(strcasecmp(token, "HELP")==0){
-                    write(msgsock, "\nThe shell has the following basic commands:\n\tADD: ADD <params[]>:Can pass multiple parameters after the keyword ADD 4 5\n\tSUB: SUB <params>: Can pass multiple parameters after the keyword SUB e.g SUB 4 5 6\n\tMUL: MUL <params> : Can pass multiple parameters after the keyword MUL e.g MUL 4 5 6\n\tDIV: DIV <params>: Can pass multiple parameters after the keyword DIV e.g DIV 4 5 6\n\tRUN : RUN <filename>: Creates a new Process of given filename\n\tHELP: Shows the help", sizeof("\nThe shell has the following basic commands:\n\tADD: ADD <params[]>:Can pass multiple parameters after the keyword ADD 4 5\n\tSUB: SUB <params>: Can pass multiple parameters after the keyword SUB e.g SUB 4 5 6\n\tMUL: MUL <params> : Can pass multiple parameters after the keyword MUL e.g MUL 4 5 6\n\tDIV: DIV <params>: Can pass multiple parameters after the keyword DIV e.g DIV 4 5 6\n\tRUN : RUN <filename>: Creates a new Process of given filename\n\tHELP: Shows the help"));
-                }
-
-                else{
-                    write(msgsock, ":Command Not Recognized\n", sizeof(":Command Not Recognized\n"));
-                }
+            else{
+                perror("Fork");
             }
         }
-        write(STDOUT_FILENO, "Client Closed", sizeof("Client Closed"));
-        close(msgsock);
     } while(TRUE);
 
-    return 0;
+
+}
+
+return 0;
 }
